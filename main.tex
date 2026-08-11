@@ -33,9 +33,31 @@
 \begin{document}
 
 \maketitle
-Part 1
-Part 2
-Part 3
-\section{}
+
+\section{Guides}
+\subsection{Setting up a GIT "repo" in MATLAB}
+\subsection{making changes to the repo in MATLAB}
+\subsection{Making changes to the repo in Overleaf}
+you can type out the changes you want to make here, and recompiling to see the document with the changes made.
+
+You can also "push" this file to the github (although at this point in time I don't see a reason why) by clicking on the "Integrations" symbol on the left of the screen (under the search icon) and pressing GitHub.
+
+\subsection{Getting a FITS file from Stanford}
+link to get data:
+http://jsoc.stanford.edu/ajax/lookdata.html
+\begin{enumerate}
+    \item fetch seriesname list
+    \item hmi.Ld_720s (or 45s) 
+    \item select ALL on keywords and segments
+    \item format: hmi.Ld_720s[YYYY.MM.DD_HH:MM:SS_TAI]
+    \item getrecordcount
+    \item fetch keyword set (green button)
+    \item export data tab at top
+    \item register your email in 'notify' section (reply with blank email)
+    \item check parameters and submit and wait for 
+\end{enumerate}
+
+\subsection{Getting intensity from the FITS file}
+
 
 \end{document}
