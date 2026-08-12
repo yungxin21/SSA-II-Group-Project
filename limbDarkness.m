@@ -12,19 +12,20 @@ img = fitsread("hmi.Ld_720s.20190413_210000_TAI.3.linedepth.fits", "image");
 
 xmin=find(img(2048,:)/1000>=1,1,"first");
 xmax=find(img(2048,:)/1000>=1,1,"last");
-rx=xmax-xmin+1;
+diax=xmax-xmin+1;
+rx=diax/2;
 
 ymin=find(img(:,2048)/1000>=1,1,"first");
 ymax=find(img(:,2048)/1000>=1,1,"last");
-ry=ymax-ymin+1;
+diay=ymax-ymin+1;
+ry=diay/2;
 
+dia=floor(mean([diax,diay]));
 r=floor(mean([rx,ry]));
 
 % tests conclude that rows 2047-2049 will present the same values of r.
 
 % now to correct for limb darkening.
-% we need to take the averages for the values in the middle, to get an idea
-% of how much correcting we need to do towards the edges.
 
 % we'll start simple. Assume that the Sun is a perfect sphere, and we can
 % relate two variables: the difference between the value of the surface we
@@ -32,14 +33,28 @@ r=floor(mean([rx,ry]));
 % difference between the intensity value at the specified point, and the
 % averaged values of the center.
 
-% we can map out a hemisphere with the function f(x,y)=1-sqrt(1-x^2-y^2), 
-% setting the radius of the sun to average of rx and ry.
-
 % an issue with this is it is taking values outside of the disc (since it
 % includes the corners of xmin,ymin, and xmax,ymax).
 % might be necessary to change to polar coordinates, or figure out another
-% method. The values below does not work.
+% method.
 
-x=xmin:1:xmax-1;
-y=ymin:1:ymax;
-Z=r-sqrt(r^2-x.^2-y.^2);
+% need to figure out which one takes the divisor. (whether diax or diay
+% is larger, and so one of the divs will be 1, while the other 1.00001
+% (extra row/col of pixels)
+% temp fix is to manually adjust entries to create a perfect circle.
+
+x = xmin:1:xmax-1;
+y = ymin:1:ymax;
+
+[X,Y] = meshgrid(x,y);
+Zsq = r^2-(X-r).^2-(Y-r).^2;
+% remove negative numbers to prevent complex array
+Zsq(Zsq<0) = NaN;
+Z = r-sqrt(Zsq);
+
+% so the above works, but has values up to 1.8k? So somehow we need to
+% factor it down to 1 and above.
+
+% alternate way is to measure the change in the drop of intensity over time
+% maybe as a derivative or as a gradient (since it is a surface)
+% 
