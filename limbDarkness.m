@@ -1,6 +1,7 @@
 clear all
 % In later versions, the file name will have to be adjusted to read multiple files.
 img = fitsread("hmi.Ld_720s.20190413_210000_TAI.3.linedepth.fits", "image");
+% imagesc(img); colormap; colormap("bone");
 
 % 1. Identify the solar disc. 
 
@@ -20,7 +21,7 @@ diav=vmax-vmin+1;
 rv=diav/2;
 
 dia=floor(mean([diau,diav]));
-r=floor(mean([ru,rv]));
+R = floor(mean([ru,rv])); % the radius of the sun in pixels
 
 function val = deleteSpace(radius,image)
     val = image;
@@ -34,7 +35,7 @@ function val = deleteSpace(radius,image)
 end 
 
 % updated values without surrounding background space
-newimg = deleteSpace(r,img);
+newimg = deleteSpace(R,img);
 
 % 2. Correct for limb darkening.
 % % a. Identify "rings" around Sun and convert to 1-D vector
@@ -58,7 +59,39 @@ newimg = deleteSpace(r,img);
 % alternate way is to measure the change in the drop of intensity over time
 % maybe as a derivative or as a gradient (since it is a surface)
 
+% alternate route: gradient
+% _____________________________________________________________________
 
+% SDO HMI continuum image wavelength: 617.3 nm (this is important for the
+% correction factor!). this is because the limb darkening is dependent on
+% the wavelength the image was captured at.
 
+center_x = 2048;
+center_y = 2048;
+% grid of pixel coordinates
+[X, Y] = meshgrid(1:size(newimg, 2), 1:size(newimg, 1));
+% calculate the radial distance (r) from the center for every pixel
+r = sqrt((X - center_x).^2 + (Y - center_y).^2);
 
+% mu = cos(theta), where theta is the heliocentric angle
+% also we clamp the values to avoid complex numbers or division by zero outside the limb
+mu = sqrt(max(0, 1 - (r ./ R).^2)); 
+% limb darkening coefficients (see references):
+u1 = 0.836; 
+u2 = -0.204;
 
+% equals ~1 at the around the centre (i.e, no correction) and near 0 around
+% the edges (alot of correction)
+limb_fit = 1 - u1 * (1 - mu) - u2 * (1 - mu).^2; 
+
+ 
+solar_disk_mask = (r <= R); % just 0 where the sun isnt
+% and 1 where the sun is, so correction is only applied on sun and not background
+% this is kind of redundant because of newimg which removes the background
+% but whatever
+
+corrected_img = img;
+% apply the corrected intensity values to the array of 0s and 1s
+corrected_img(solar_disk_mask) = img(solar_disk_mask) ./ limb_fit(solar_disk_mask);
+    
+imagesc(corrected_img); colormap; colormap("bone");
