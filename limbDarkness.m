@@ -1,7 +1,8 @@
 clear all
 % In later versions, the file name will have to be adjusted to read multiple files.
 img = fitsread("hmi.Ld_720s.20190413_210000_TAI.3.linedepth.fits", "image");
-% imagesc(img); colormap; colormap("bone");
+newimg = img;
+figure(2); imagesc(newimg); colormap; colormap("bone"); colorbar;
 
 % 1. Identify the solar disc. 
 
@@ -23,19 +24,19 @@ rv=diav/2;
 dia=floor(mean([diau,diav]));
 R = floor(mean([ru,rv])); % the radius of the sun in pixels
 
-function val = deleteSpace(radius,image)
-    val = image;
-    for row=1:1:4096
-        for col=1:1:4096
-            if abs(row-2048)^2+abs(col-2048)^2 > radius^2
-                val(row,col) = 0;
-            end
-        end
-    end
-end 
+% function val = deleteSpace(radius,image)
+%     val = image;
+%     for row=1:1:4096
+%         for col=1:1:4096
+%             if abs(row-2048)^2+abs(col-2048)^2 > radius^2
+%                 val(row,col) = 0;
+%             end
+%         end
+%     end
+% end 
 
 % updated values without surrounding background space
-newimg = deleteSpace(R,img);
+% newimg = deleteSpace(R,img);
 
 % 2. Correct for limb darkening.
 % % a. Identify "rings" around Sun and convert to 1-D vector
@@ -69,7 +70,7 @@ newimg = deleteSpace(R,img);
 center_x = 2048;
 center_y = 2048;
 % grid of pixel coordinates
-[X, Y] = meshgrid(1:size(newimg, 2), 1:size(newimg, 1));
+[X, Y] = meshgrid(1:size(img, 2), 1:size(img, 1));
 % calculate the radial distance (r) from the center for every pixel
 r = sqrt((X - center_x).^2 + (Y - center_y).^2);
 
@@ -82,10 +83,12 @@ u2 = -0.204;
 
 % equals ~1 at the around the centre (i.e, no correction) and near 0 around
 % the edges (alot of correction)
-limb_fit = 1 - u1 * (1 - mu) - u2 * (1 - mu).^2; 
+% limb_fit = 1 - u1 * (1 - mu) - u2 * (1 - mu).^2;
+limb_fit = 1 - u1 - u2 + u1 * mu + u2 * (mu).^2;
+
 
  
-solar_disk_mask = (r <= R); % just 0 where the sun isnt
+solar_disk_mask = (r <= R); % basically just 0 where the sun isnt
 % and 1 where the sun is, so correction is only applied on sun and not background
 % this is kind of redundant because of newimg which removes the background
 % but whatever
@@ -94,4 +97,8 @@ corrected_img = img;
 % apply the corrected intensity values to the array of 0s and 1s
 corrected_img(solar_disk_mask) = img(solar_disk_mask) ./ limb_fit(solar_disk_mask);
     
-imagesc(corrected_img); colormap; colormap("bone");
+figure(1); imagesc(corrected_img); colormap; colormap("bone"); colorbar;
+
+
+
+
