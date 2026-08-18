@@ -2,13 +2,13 @@ clear all
 % In later versions, the file name will have to be adjusted to read multiple files.
 img = fitsread("hmi.Ld_720s.20190413_210000_TAI.3.linedepth.fits", "image");
 newimg = img;
-figure(2); imagesc(newimg); colormap; colormap("bone"); colorbar;
+% figure(2); imagesc(newimg); colormap; colormap("bone"); colorbar;
 
 % 1. Identify the solar disc. 
 
 % automate this by finding the first and last value that is not -1000, 
 % and that is not pitch black, in the centermost row/column.
-% the intensity of the background space given by the FITS file has values
+% the intensity of the background space given by the FITS file roughly has values
 % under 1000, which is why each value is divided by 1000.
 
 umin=find(img(2048,:)/1000>=1,1,"first");
@@ -24,45 +24,7 @@ rv=diav/2;
 dia=floor(mean([diau,diav]));
 R = floor(mean([ru,rv])); % the radius of the sun in pixels
 
-% function val = deleteSpace(radius,image)
-%     val = image;
-%     for row=1:1:4096
-%         for col=1:1:4096
-%             if abs(row-2048)^2+abs(col-2048)^2 > radius^2
-%                 val(row,col) = 0;
-%             end
-%         end
-%     end
-% end 
-
-% updated values without surrounding background space
-% newimg = deleteSpace(R,img);
-
 % 2. Correct for limb darkening.
-% % a. Identify "rings" around Sun and convert to 1-D vector
-% % b. Compare "rings" to center of a certain radius to determine correction 
-% %    factor.
-% % c. use the right factor to their respective numbers and update intensity values
-% %    on img.
-
-% x = umin:1:umax-1;
-% y = vmin:1:vmax;
-% 
-% [X,Y] = meshgrid(x,y);
-% Zsq = r^2-(X-r).^2-(Y-r).^2;
-% % remove negative numbers to prevent complex array
-% Zsq(Zsq<0) = NaN;
-% Z = r-sqrt(Zsq);
-
-% so the above works, but has values up to 1.8k? So somehow we need to
-% factor it down to 1 and above.
-
-% alternate way is to measure the change in the drop of intensity over time
-% maybe as a derivative or as a gradient (since it is a surface)
-
-% alternate route: gradient
-% _____________________________________________________________________
-
 % SDO HMI continuum image wavelength: 617.3 nm (this is important for the
 % correction factor!). this is because the limb darkening is dependent on
 % the wavelength the image was captured at.
@@ -82,11 +44,8 @@ u1 = 0.836;
 u2 = -0.204;
 
 % equals ~1 at the around the centre (i.e, no correction) and near 0 around
-% the edges (alot of correction)
-% limb_fit = 1 - u1 * (1 - mu) - u2 * (1 - mu).^2;
+% the edges (a lot of correction)
 limb_fit = 1 - u1 - u2 + u1 * mu + u2 * (mu).^2;
-
-
  
 solar_disk_mask = (r <= R); % basically just 0 where the sun isnt
 % and 1 where the sun is, so correction is only applied on sun and not background
