@@ -52,7 +52,7 @@ u2 = -0.204;
 
 % equals ~1 at the around the centre (i.e, no correction) and near 0 around
 % the edges (alot of correction)
-limb_fit1 = 1 - u1 * (1 - mu) - u2 * (1 - mu).^2;
+limb_fit1 = 1 - u1 - u2 - u1 * (1 - mu) - u2 * (1 - mu).^2;
 
 solar_disk_mask = (r <= R); % just 0 where the sun isnt
 % and 1 where the sun is, so correction is only applied on sun and not background
