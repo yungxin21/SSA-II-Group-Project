@@ -58,6 +58,9 @@ corrected_img(solar_disk_mask) = img(solar_disk_mask) ./ limb_fit(solar_disk_mas
     
 figure(1); imagesc(corrected_img); colormap; colormap("bone"); colorbar;
 
-
-
+% view intensity over r/r_solar plot.
+% this one is horizontal, from 0 to the left outer edge of the Sun.
+figure(2); plot(1:2048,corrected_img(2048, 2048:-1:1)) 
+xlabel('r/r_☉') 
+ylabel('intensity')
 
