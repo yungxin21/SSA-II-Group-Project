@@ -64,10 +64,9 @@ figure(1); imagesc(corrected_img); colormap; colormap("bone"); colorbar;
 figure(2); plot((1:1:ru)/ru,corrected_img(2048, 2041:1:umax)) 
 title('Intensity over Radius Plot')
 xlabel('r/r_☉') 
-ylabel('intensity')
+ylabel('Intensity')
 xlim([0 1.5])
 ylim([0 40000])
 
-% could maybe figure out a way to do it based on where the cursor is
-% hovering over? kinda like in DS9.
+% rings
 
