@@ -1,6 +1,6 @@
 close all
 % In later versions, the file name will have to be adjusted to read multiple files.
-img = fitsread("hmi.Ld_720s.20190413_210000_TAI.3.linedepth.fits", "image");
+img = fitsread("hmi.Ic_720s.20190413_210000_TAI.3.continuum.fits", "image");
 newimg = img;
 % figure(2); imagesc(newimg); colormap; colormap("bone"); colorbar;
 
@@ -56,17 +56,22 @@ corrected_img = img;
 % apply the corrected intensity values to the array of 0s and 1s
 corrected_img(solar_disk_mask) = img(solar_disk_mask) ./ limb_fit(solar_disk_mask);
     
-figure(1); imagesc(corrected_img); colormap; colormap("bone"); colorbar;
-
+% figure(1); imagesc(corrected_img); colormap; colormap("bone"); colorbar;
+% fitswrite(corrected_img,"corrected.fits");
 
 % view intensity over r/r_solar plot.
 % this one is horizontal, from 0 to the left outer edge of the Sun.
-figure(2); plot((1:1:ru)/ru,corrected_img(2048, 2041:1:umax)) 
-title('Intensity over Radius Plot')
-xlabel('r/r_☉') 
-ylabel('Intensity')
-xlim([0 1.5])
-ylim([0 40000])
+
+rings = zeros(1905,11970); % Initialize rings array to store intensity values
+for i=1:1:R
+    ring = (round(r)==i);
+    rings(i,size(ring)) = round(corrected_img(ring)).';
+end
+vali = mode(rings,1);
+
+figure(2); plot()
+
 
 % rings
+
 
