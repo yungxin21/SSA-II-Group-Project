@@ -1,8 +1,7 @@
 close all
 % In later versions, the file name will have to be adjusted to read multiple files.
 img = fitsread("hmi.Ic_720s.20190413_210000_TAI.3.continuum.fits", "image");
-newimg = img;
-% figure(2); imagesc(newimg); colormap; colormap("bone"); colorbar;
+% figure(2); imagesc(img); colormap; colormap("bone"); colorbar;
 
 % 1. Identify the solar disc. 
 
@@ -49,29 +48,30 @@ limb_fit = 1 - u1 - u2 + u1 * mu + u2 * (mu).^2;
  
 solar_disk_mask = (r <= R); % basically just 0 where the sun isnt
 % and 1 where the sun is, so correction is only applied on sun and not background
-% this is kind of redundant because of newimg which removes the background
+% this is kind of redundant because of img which removes the background
 % but whatever
 
 corrected_img = img;
 % apply the corrected intensity values to the array of 0s and 1s
 corrected_img(solar_disk_mask) = img(solar_disk_mask) ./ limb_fit(solar_disk_mask);
+expected_img = fitsread("hmi.Ic_noLimbDark_720s.20190413_210000_TAI.3.continuum.fits", "image");
     
-% figure(1); imagesc(corrected_img); colormap; colormap("bone"); colorbar;
-% fitswrite(corrected_img,"corrected.fits");
+figure(1); imagesc(corrected_img); colormap; colormap("bone"); colorbar;
+fitswrite(corrected_img,"corrected.fits");
 
+
+correctedModes = [];
+originalModes = [];
 % view intensity over r/r_solar plot.
-% this one is horizontal, from 0 to the left outer edge of the Sun.
-
-rings = zeros(1905,11970); % Initialize rings array to store intensity values
-for i=1:1:R
+for i=1:R
     ring = (round(r)==i);
-    rings(i,size(ring)) = round(corrected_img(ring)).';
+    correctedModes = [correctedModes, mode(corrected_img(ring))]; 
+    originalModes = [originalModes, mode(img(ring))];
 end
-vali = mode(rings,1);
-
-figure(2); plot()
-
-
-% rings
-
-
+figure(2); plot((1:R)/R,correctedModes); hold on;
+plot((1:R)/R,originalModes); hold off;
+title('Intensity over Radius Plot')
+xlabel('r/r_☉')
+ylabel('intensity')
+xlim([0 1.25])
+ylim([0 55000])
