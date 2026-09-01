@@ -1,11 +1,14 @@
-uncompressedimg = gunzip("")
-img = fitsread("k4v72090930t165755.fits");
-imginfo = fitsinfo("k4v72090930t165755.fits");
+img = fitsread("512c_eo000_C1_19760116_1620.fits");
+fitsdisp("512c_eo000_C1_19760116_1620.fits");
+% note: need image processing toolbox to run imgaussfilt
+smoothedimg = imgaussfilt(img, 2);
 
-img = imgaussfilt(img, 2); % removing background  noise
-fitsdisp(img, "image");
+fluxthreshold = 50; % to be adjusted depending on magnetic field strength (TBD)
+% apply the threshold to identify field line regions
+positivemask = smoothedimg > fluxthreshold;
+negativemask = smoothedimg < -fluxthreshold;
 
-fluxthreshold = 50;
+
 
 % 1 image per 3 months? so over a 44 year period that is 136 images to
 % verify hales law
