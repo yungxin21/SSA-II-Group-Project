@@ -1,7 +1,8 @@
 close all
 % In later versions, the file name will have to be adjusted to read multiple files.
 img = fitsread("hmi.Ic_720s.20190413_210000_TAI.3.continuum.fits", "image");
-% figure(2); imagesc(img); colormap; colormap("bone"); colorbar;
+euv_lev1 = fitsread("aia.lev1_euv_12s.2019-04-13T210049Z.94.image_lev1.fits", "image");
+figure(3); imagesc(euv_lev1); colormap("bone"); colorbar;
 
 % 1. Identify the solar disc. 
 
@@ -56,8 +57,8 @@ corrected_img = img;
 corrected_img(solar_disk_mask) = img(solar_disk_mask) ./ limb_fit(solar_disk_mask);
 expected_img = fitsread("hmi.Ic_noLimbDark_720s.20190413_210000_TAI.3.continuum.fits", "image");
     
-figure(1); imagesc(corrected_img); colormap; colormap("bone"); colorbar;
-fitswrite(corrected_img,"corrected.fits");
+% figure(1); imagesc(corrected_img); colormap; colormap("bone"); colorbar;
+% fitswrite(corrected_img,"corrected.fits");
 
 
 % adjustable intensity plot with normalized radii.
