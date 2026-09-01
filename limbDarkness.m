@@ -8,7 +8,7 @@ img = fitsread("hmi.Ic_720s.20190413_210000_TAI.3.continuum.fits", "image");
 % automate this by finding the first and last value that is not -1000, 
 % and that is not pitch black, in the centermost row/column.
 % the intensity of the background space given by the FITS file roughly has values
-% under 1000, which is why each value is divided by 1000.
+% under 1000 in the centermost columns and rows, which is why each value is divided by 1000.
 
 umin=find(img(2048,:)/1000>=1,1,"first");
 umax=find(img(2048,:)/1000>=1,1,"last");
@@ -60,16 +60,20 @@ figure(1); imagesc(corrected_img); colormap; colormap("bone"); colorbar;
 fitswrite(corrected_img,"corrected.fits");
 
 
+% adjustable intensity plot with normalized radii.
+
 correctedModes = [];
 originalModes = [];
+% change the value below to see a more/less detailed plot.
+spacing = 5;
 % view intensity over r/r_solar plot.
-for i=1:R
-    ring = (round(r)==i);
+for i=1:spacing:R
+    ring = (round(r)==round(i));
     correctedModes = [correctedModes, mode(corrected_img(ring))]; 
     originalModes = [originalModes, mode(img(ring))];
 end
-figure(2); plot((1:R)/R,correctedModes); hold on;
-plot((1:R)/R,originalModes); hold off;
+figure(2); plot((1:spacing:R)/R,correctedModes); hold on;
+plot((1:spacing:R)/R,originalModes); hold off;
 title('Intensity over Radius Plot')
 xlabel('r/r_☉')
 ylabel('intensity')
