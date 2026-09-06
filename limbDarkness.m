@@ -1,82 +1,82 @@
-close all
-% In later versions, the file name will have to be adjusted to read multiple files.
-img = fitsread("hmi.Ic_720s.20190413_210000_TAI.3.continuum.fits", "image");
-euv_lev1 = fitsread("aia.lev1_euv_12s.2019-04-13T210049Z.94.image_lev1.fits", "image");
-figure(3); imagesc(euv_lev1); colormap("bone"); colorbar;
+function limbDarkness(fits_input,fits_output,plot_spacing)
+    img = fitsread(fits_input, "image");
 
-% 1. Identify the solar disc. 
+    % Magnetogram option (in separate branch)
 
-% automate this by finding the first and last value that is not -1000, 
-% and that is not pitch black, in the centermost row/column.
-% the intensity of the background space given by the FITS file roughly has values
-% under 1000 in the centermost columns and rows, which is why each value is divided by 1000.
+    % AIA EUV option
+    % euv_lev1 = fitsread(fits_input, "image");
+    % figure(3); imagesc(euv_lev1); colormap("bone"); colorbar;
 
-umin=find(img(2048,:)/1000>=1,1,"first");
-umax=find(img(2048,:)/1000>=1,1,"last");
-diau=umax-umin+1;
-ru=diau/2;
+    % 1. Identify the solar discs
 
-vmin=find(img(:,2048)/1000>=1,1,"first");
-vmax=find(img(:,2048)/1000>=1,1,"last");
-diav=vmax-vmin+1;
-rv=diav/2;
-
-dia=floor(mean([diau,diav]));
-R = floor(mean([ru,rv])); % the radius of the sun in pixels
-
-% 2. Correct for limb darkening.
-% SDO HMI continuum image wavelength: 617.3 nm (this is important for the
-% correction factor!). this is because the limb darkening is dependent on
-% the wavelength the image was captured at.
-
-center_x = 2048;
-center_y = 2048;
-% grid of pixel coordinates
-[X, Y] = meshgrid(1:size(img, 2), 1:size(img, 1));
-% calculate the radial distance (r) from the center for every pixel
-r = sqrt((X - center_x).^2 + (Y - center_y).^2);
-
-% mu = cos(theta), where theta is the heliocentric angle
-% also we clamp the values to avoid complex numbers or division by zero outside the limb
-mu = sqrt(max(0, 1 - (r ./ R).^2)); 
-% limb darkening coefficients (see references):
-u1 = 0.836; 
-u2 = -0.204;
-
-% equals ~1 at the around the centre (i.e, no correction) and near 0 around
-% the edges (a lot of correction)
-limb_fit = 1 - u1 - u2 + u1 * mu + u2 * (mu).^2;
- 
-solar_disk_mask = (r <= R); % basically just 0 where the sun isnt
-% and 1 where the sun is, so correction is only applied on sun and not background
-% this is kind of redundant because of img which removes the background
-% but whatever
-
-corrected_img = img;
-% apply the corrected intensity values to the array of 0s and 1s
-corrected_img(solar_disk_mask) = img(solar_disk_mask) ./ limb_fit(solar_disk_mask);
-expected_img = fitsread("hmi.Ic_noLimbDark_720s.20190413_210000_TAI.3.continuum.fits", "image");
+    info = fitsinfo(fits_input);
+    keywords = info.Image.Keywords;
+    valIdx = strcmp(keywords(:,1), 'CRPIX1');
+    valIdx2 = strcmp(keywords(:,1), 'CRPIX2');
+    center_x = round(keywords{valIdx, 2});
+    center_y = round(keywords{valIdx2, 2});
     
-% figure(1); imagesc(corrected_img); colormap; colormap("bone"); colorbar;
-% fitswrite(corrected_img,"corrected.fits");
+    % find the first and last index with positive values larger than 1000
+    xmin=find(img(center_x,:)/1000>=1,1,"first"); 
+    xmax=find(img(center_x,:)/1000>=1,1,"last");
+    diameter_x=xmax-xmin+1;
+    radius_x=diameter_x/2;
+    
+    ymin=find(img(:,center_y)/1000>=1,1,"first");
+    ymax=find(img(:,center_y)/1000>=1,1,"last");
+    diameter_y=ymax-ymin+1;
+    radius_y=diameter_y/2;
+    
+    radius = floor(mean([radius_x,radius_y])); % the radius of the sun in pixels
+    
+    % 2. Correct for limb darkening.
+    % SDO HMI continuum image wavelength: 617.3 nm (limb darkness is
+    % dependent on captured wavelength)
+    
+    % grid of pixel coordinates
+    [X, Y] = meshgrid(1:size(img, 2), 1:size(img, 1));
+    % calculate the radial distance (r) from the center for every pixel
+    r = sqrt((X - center_x).^2 + (Y - center_y).^2);
+    
+    % here mu = cos(theta), where theta is the heliocentric angle
+    mu = sqrt(max(0, 1 - (r ./ radius).^2)); 
+    % limb darkening coefficients (see references):
+    u1 = 0.836; 
+    u2 = -0.204;
+    
+    % equals ~1 at the around the centre (i.e, no correction) and near 0 around
+    % the edges (a lot of correction)
+    limb_fit = 1 - u1 - u2 + u1 * mu + u2 * (mu).^2;
+     
+    
+    % need to change this to work with sunspot.m
+    solar_disk_mask = (r <= radius); % basically just 0 where the sun isnt
+    % and 1 where the sun is, so correction is only applied on sun and not background
+    % solar_disk_mask(solar_disk_mask<0) = NaN;
+    
+    corrected_img = img;
+    % apply the corrected intensity values to the array of 0s and 1s
+    corrected_img(solar_disk_mask) = img(solar_disk_mask) ./ limb_fit(solar_disk_mask);        
+    figure(1); imagesc(corrected_img); colormap; colormap("bone"); colorbar;
+    fitswrite(corrected_img,fits_output);
 
 
-% adjustable intensity plot with normalized radii.
-
-correctedModes = [];
-originalModes = [];
-% change the value below to see a more/less detailed plot.
-spacing = 5;
-% view intensity over r/r_solar plot.
-for i=1:spacing:R
-    ring = (round(r)==round(i));
-    correctedModes = [correctedModes, mode(corrected_img(ring))]; 
-    originalModes = [originalModes, mode(img(ring))];
+    % adjustable intensity plot with normalized radii.
+    if (plot_spacing > 0)
+        correctedModes = [];
+        originalModes = [];
+        % view intensity over r/r_solar plot.
+        for i=1:plot_spacing:radius
+            ring = (round(r)==round(i));
+            correctedModes = [correctedModes, mode(corrected_img(ring))]; 
+            originalModes = [originalModes, mode(img(ring))];
+        end
+        figure(2); plot((1:plot_spacing:radius)/radius,correctedModes); hold on;
+        plot((1:plot_spacing:radius)/radius,originalModes); hold off;
+        title('Intensity over Radius Plot')
+        xlabel('r/r_☉')
+        ylabel('intensity')
+        xlim([0 1.25])
+        ylim([0 55000])
+    end
 end
-figure(2); plot((1:spacing:R)/R,correctedModes); hold on;
-plot((1:spacing:R)/R,originalModes); hold off;
-title('Intensity over Radius Plot')
-xlabel('r/r_☉')
-ylabel('intensity')
-xlim([0 1.25])
-ylim([0 55000])
