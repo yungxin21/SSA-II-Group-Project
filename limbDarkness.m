@@ -1,4 +1,5 @@
 function limbDarkness(fits_input,fits_output,plot_spacing)
+    copyfile(fits_input,"corrected.fits");
     img = fitsread(fits_input, "image");
 
     % Magnetogram option (in separate branch)
@@ -47,7 +48,6 @@ function limbDarkness(fits_input,fits_output,plot_spacing)
     % equals ~1 at the around the centre (i.e, no correction) and near 0 around
     % the edges (a lot of correction)
     limb_fit = 1 - u1 - u2 + u1 * mu + u2 * (mu).^2;
-     
     
     % need to change this to work with sunspot.m
     solar_disk_mask = (r <= radius); % basically just 0 where the sun isnt
@@ -59,6 +59,7 @@ function limbDarkness(fits_input,fits_output,plot_spacing)
     corrected_img(solar_disk_mask) = img(solar_disk_mask) ./ limb_fit(solar_disk_mask);        
     figure(1); imagesc(corrected_img); colormap; colormap("bone"); colorbar;
     corrected_img(corrected_img<0) = NaN;
+    % add the same metadata from img to corrected_img.
     fitswrite(corrected_img,fits_output);
 
 
