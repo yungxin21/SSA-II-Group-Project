@@ -58,6 +58,7 @@ function limbDarkness(fits_input,fits_output,plot_spacing)
     % apply the corrected intensity values to the array of 0s and 1s
     corrected_img(solar_disk_mask) = img(solar_disk_mask) ./ limb_fit(solar_disk_mask);        
     figure(1); imagesc(corrected_img); colormap; colormap("bone"); colorbar;
+    corrected_img(corrected_img<0) = NaN;
     fitswrite(corrected_img,fits_output);
 
 
