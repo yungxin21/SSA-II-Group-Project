@@ -2,20 +2,21 @@
 %spotlessimg=fitsread("SSAII\hmi.Ic_noLimbDark_720s.20191203_010000_TAI.3.continuum.fits","image");
 
 % Preallocating bin size
-bins = 0:0.01:1.3;
+%bins = 0:0.01:1.3;
 
 % Histogram of log10 intensity
 %[spotlesscount,bins] = hist(spotlessimg(spotlessimg > 0), bins);
 %semilogy(bins,(spotlesscount), Color="g"); hold on;
 
-% img=fitsread("SSAII\hmi.Ic_noLimbDark_720s.20240504_040000_TAI.3.continuum.fits","image");
+% Read in fits image of no limb dark sun for testing
+ img=fitsread("SSAII\hmi.Ic_noLimbDark_720s.20240504_040000_TAI.3.continuum.fits","image");
 %img=fitsread("corrected.fits","image");
-[spotcount,bins] = hist(img(img > 0), bins);
+%[spotcount,bins] = hist(img(img > 0), bins);
 %semilogy(bins,(spotcount), Color="b"); hold on;
 
 % Generating mode and interval for seperating sun from spots
-[intensityCentre,binsCentre] = max((spotcount));
-halfMax = intensityCentre/2;
+%[intensityCentre,binsCentre] = max((spotcount));
+%halfMax = intensityCentre/2;
 
 % Tried using fwhm for the automatic detection of sun values but pivotted
 % to sigma clipping instead
@@ -44,6 +45,8 @@ halfMax = intensityCentre/2;
 % Attempting to create own function for clipping with help from AI
 function [maskedImg, mask] = sigmaClip(data, nSigma, maxI)
 % Make all negative values to be NaN for ease of finding 0 in data
+maskedImg = logical(data);
+maskedImg(:) = 0;
 data(data<0) = NaN;
 % Dedicated map of where NaN's are
 nanMask = isnan(data);
@@ -65,16 +68,30 @@ for i=1:maxI
     mask = newMask;
 end
 % Replacing clipped values to keep same matrix dimensions
-maskedImg = data;
-maskedImg(~mask & ~nanMask) = -1;
+maskedImg(~mask & ~nanMask) = 1;
 end
 
 % Testing function
-clippedImg = sigmaClip(corrected_img, 3, 1);
+%clippedImg = sigmaClip(img, 5, 10);
 % Using imagesc to compare to DS9 fits image
 %imagesc(clippedImg), colorbar, clim([-2 0]);
 % Image was flipped vertically so just flipped rows of the matrix to make
 % the same as the DS9 fits image
-flippedImg = flipud(clippedImg);
-imagesc(flippedImg), colorbar, clim([-2 0]);
+%flippedImg = flipud(clippedImg);
+% Altered the imagesc function instead
+%imagesc(clippedImg);axis xy, colorbar, clim([-2 0]);
 % Imagesc produces the same as DS9 showing the same sunspots
+
+% For sunspot group recognition need to show a difference between penumbra
+% and umbra, will test merging two images one with higher sigma and one
+% with lower. Tried to add values directly but eventually came to the
+% conclusion that adding the masks would work
+
+[penumbraImg,penumbraMask] = sigmaClip(img,5,10);
+[umbraImg,umbraMask] = sigmaClip(img,15,10);
+mergedMask = (penumbraMask+umbraMask);
+imagesc(mergedMask);axis xy, colorbar;
+
+% Sunspot number equation is R=k(10g+f) where f is total number of
+% individual sunspots, g is the number of clusters and k is the scaling
+% factor
