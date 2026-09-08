@@ -11,28 +11,50 @@
 % 2) fit an elipsoid to the image to find bipolar flux regions
 
 % NOTE: raw archive files from the 512-channel spectrograph from kitt peak space telescope give
-% fits files in 2048x2048x5 (3D array). the image is the same in all 5
-% arrays
-img = fitsread("512c_eo000_C1_19760116_1620.fits");
+% fits files in 2048x2048x5 (3D array). use 1st channel (:,:,1) by default
+img = fitsread("svsm_8542l_S2_20130419_1605.fits");
+img = img(:,:,1);
 % raw image
-figure(1); imagesc(img(:,:,1)); colormap("bone"); colorbar;
+figure(1); imagesc(img); colormap("bone"); colorbar;
 
-imgframe = img(:,:,1);
+% 1. identify the solar disc (code courtesy of the limbdarkness branch)
+% assuming 
+center_x = 1024;
+center_y = 1024;
+% find the first and last index with positive values larger than 1000
+rowvals = img(center_y, :); % row at centre_y
+colvals = img(: , center_x); % col at center_x
+xmin = find(rowvals/1000 >= 0, 1, 'first'); 
+xmax = find(rowvals/1000 >= 0, 1, 'last');
+ymin = find(colvals/1000 >= 0, 1, 'first');
+ymax = find(colvals/1000 >= 0, 1, 'last');
+
+diameter_x = xmax - xmin + 1;
+radius_x = diameter_x / 2;
+diameter_y = ymax - ymin + 1;
+radius_y = diameter_y / 2;
+
+radius = floor(mean([radius_x,radius_y]));
+
+% imgframe = img(:,:,1);
 
 % median filtering
-medianimg = medfilt2(imgframe, [3 3]);
+medianimg = medfilt2(img, [3 3]);
+% apply the mask to the median filtered image to isolate the solar disc
+maskedimg = medianimg .* maskimg;
 figure(2); imagesc(medianimg); colormap("bone"); colorbar;
+figure(3); imagesc(maskedimg); colormap("bone"); colorbar;
 
 % proceeding with median filtering (clearest filtering):
 fluxthreshold = 50; % to be adjusted depending on avg magnetic field strength (TBD)
 % maybe set a flux threshold depending on the images time of
 % observation within the Hale's Law cycle. 
-minimumarea = 50; % num of pixels to keep in the patch of bipolar 
+minimumarea = 20; % num of pixels to keep in the patch of flux
 
 % apply the threshold to identify field line regions
 positivemask = medianimg > fluxthreshold; % white regions of strong "positive" polarity
 negativemask = medianimg < -fluxthreshold; % black regions of strong "negative" polarity
-
 % remove areas of fewer than minimumarea pixels of "flux" 
 positivemask = bwareaopen(positivemask, minimumarea);
 negativemask = bwareaopen(negativemask, minimumarea);
+
