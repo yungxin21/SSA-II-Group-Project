@@ -8,7 +8,7 @@
 % process
 % 1) smooth the image (gauss filtering to remove noise while preserving the
 % bipolar active regions on the magnetogram).
-% 
+% 2) fit an elipsoid to the image to find bipolar flux regions
 
 % NOTE: raw archive files from the 512-channel spectrograph from kitt peak space telescope give
 % fits files in 2048x2048x5 (3D array). the image is the same in all 5
@@ -18,23 +18,21 @@ img = fitsread("512c_eo000_C1_19760116_1620.fits");
 figure(1); imagesc(img(:,:,1)); colormap("bone"); colorbar;
 
 imgframe = img(:,:,1);
-img = medfilt2(imgframe,[3 3]);
 
-% note: need image processing toolbox to run imgaussfilt
-medianimg = medfilt2(img, [3 3]);
-gaussimg = imgaussfilt(img, 2);
+% median filtering
+medianimg = medfilt2(imgframe, [3 3]);
+figure(2); imagesc(medianimg); colormap("bone"); colorbar;
 
+% proceeding with median filtering (clearest filtering):
 fluxthreshold = 50; % to be adjusted depending on avg magnetic field strength (TBD)
 % maybe set a flux threshold depending on the images time of
 % observation within the Hale's Law cycle. 
 minimumarea = 50; % num of pixels to keep in the patch of bipolar 
 
 % apply the threshold to identify field line regions
-%positivemask = smoothedimg > fluxthreshold; % white regions of strong positive polarity
-%negativemask = smoothedimg < -fluxthreshold; % black regions of strong negative polarity
+positivemask = medianimg > fluxthreshold; % white regions of strong "positive" polarity
+negativemask = medianimg < -fluxthreshold; % black regions of strong "negative" polarity
 
-% gauss filtering
-figure(2); imagesc(gaussimg); colormap("bone"); colorbar;
-
-% median filtering
-figure(3); imagesc(medianimg); colormap("bone"); colorbar;
+% remove areas of fewer than minimumarea pixels of "flux" 
+positivemask = bwareaopen(positivemask, minimumarea);
+negativemask = bwareaopen(negativemask, minimumarea);
