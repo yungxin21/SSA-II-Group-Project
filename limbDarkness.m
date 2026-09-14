@@ -1,5 +1,4 @@
-function limbDarkness(fits_input,fits_output,plot_spacing)
-    copyfile(fits_input,"corrected.fits");
+function corrected_img = limbDarkness(fits_input,plot_spacing,corrected_fig_num)
     img = fitsread(fits_input, "image");
 
     % Magnetogram option (in separate branch)
@@ -11,11 +10,11 @@ function limbDarkness(fits_input,fits_output,plot_spacing)
     % 1. Identify the solar discs
 
     info = fitsinfo(fits_input);
-    keywords = info.Image.Keywords;
-    valIdx = strcmp(keywords(:,1), 'CRPIX1');
-    valIdx2 = strcmp(keywords(:,1), 'CRPIX2');
-    center_x = round(keywords{valIdx, 2});
-    center_y = round(keywords{valIdx2, 2});
+    img_keywords = info.Image.Keywords;
+    valIdx = strcmp(img_keywords(:,1), 'CRPIX1');
+    valIdx2 = strcmp(img_keywords(:,1), 'CRPIX2');
+    center_x = round(img_keywords{valIdx, 2});
+    center_y = round(img_keywords{valIdx2, 2});
     
     % find the first and last index with positive values larger than 1000
     xmin=find(img(center_x,:)/1000>=1,1,"first"); 
@@ -54,14 +53,18 @@ function limbDarkness(fits_input,fits_output,plot_spacing)
     % and 1 where the sun is, so correction is only applied on sun and not background
     % solar_disk_mask(solar_disk_mask<0) = NaN;
     
-    corrected_img = img;
     % apply the corrected intensity values to the array of 0s and 1s
-    corrected_img(solar_disk_mask) = img(solar_disk_mask) ./ limb_fit(solar_disk_mask);        
-    figure(1); imagesc(corrected_img); colormap; colormap("bone"); colorbar;
-    corrected_img(corrected_img<0) = NaN;
-    % add the same metadata from img to corrected_img.
-    fitswrite(corrected_img,fits_output);
+    corrected_img = img;
+    corrected_img(solar_disk_mask) = img(solar_disk_mask) ./ limb_fit(solar_disk_mask);
 
+    % block of code to plot corrected image
+    if (corrected_fig_num > 0) 
+        figure(corrected_fig_num);
+        imagesc(corrected_img)
+        set(gca, "YDir", "normal");
+        colormap("bone");
+        colorbar;
+    end
 
     % adjustable intensity plot with normalized radii.
     if (plot_spacing > 0)
@@ -81,4 +84,49 @@ function limbDarkness(fits_input,fits_output,plot_spacing)
         xlim([0 1.25])
         ylim([0 55000])
     end
+
+    % retaining HDU in FITS files can only be achieved using low-level fits
+    % code
+    % checks if fits_output exists, then deletes it.
+    % if exist(fits_output, 'file') == 2
+    %     delete(fits_output);
+    % end
+    
+    % % Initialize the Primary Image HDU matching data type and size
+    % % fptr = fits.openFile("corrected.fits","readwrite");
+    % fptr = fits.createFile(convertStringsToChars(fits_output)); 
+    % 
+    % imgSize = size(corrected_img);
+    % fits.createImg(fptr, 'double_img', imgSize);
+    % fits.writeImg(fptr, corrected_img);
+    % 
+    % % Filter out automatic structural headers (SIMPLE, BITPIX, NAXIS) to prevent duplicates
+    % trueKeys = {'WCSAXES', 'MJD-OBS', 'DATE-OBS', 'CTYPE1', 'CTYPE2', 'CRPIX1', 'CRPIX2', 'CRVAL1', 'CRVAL2', 'CDELT1', 'CDELT2', 'PC1_1', 'PC1_2', 'PC2_1', 'PC2_2'};
+    % for i = 1:size(img_keywords, 1)
+    %     img_keyName = img_keywords{i, 1};
+    %     img_keyValue = img_keywords{i, 2};
+    %     img_keyComment = img_keywords{i, 3};
+    % 
+    %     % Only write custom metadata tags, avoiding reserved structural keys
+    %     if ~isempty(img_keyName) && ismember(img_keyName, trueKeys)
+    %         if islogical(img_keyValue)
+    %             if img_keyValue
+    %                 img_keyValue = 'T';
+    %             else 
+    %                 img_keyValue = 'F';
+    %             end
+    %         end
+    %         if isempty(img_keyValue), img_keyValue = ' '; end
+    %         if isempty(img_keyComment), img_keyComment = ' '; end
+    %         if isstring(img_keyValue), img_keyValue = char(img_keyValue); end
+    %         if isstring(img_keyComment), img_keyComment = char(img_keyComment); end    
+    %         try
+    %             fits.writeKey(fptr, img_keyName, img_keyValue, img_keyComment);
+    %         catch ME
+    %             warning('Failed to write key "%s" with value class "%s": %s', ...
+    %                 img_keyName, class(img_keyValue), ME.message);
+    %         end
+    %     end
+    % end
+    % fits.closeFile(fptr)
 end
