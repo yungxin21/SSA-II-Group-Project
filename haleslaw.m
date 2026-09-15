@@ -1,3 +1,4 @@
+% note: image processing toolbox is required
 % 1 image per 3 months? so over a 44 year period that is 136 images to
 % verify hales law
 % ^ increment may need to be reduced by every 1 month but we'll see
@@ -46,17 +47,24 @@ medianimg(~maskimg) = NaN;
 figure(2); imagesc(medianimg); colormap("bone"); colorbar;
 
 % 3. proceeding with median filtering (clearest filtering):
-fluxthreshold = 50; % to be adjusted depending on avg magnetic field strength (TBD)
+fluxthreshold = 120; % to be adjusted depending on avg magnetic field strength (TBD)
 % maybe set a flux threshold depending on the images time of
 % observation within the Hale's Law cycle. 
-minimumarea = 20; % num of pixels to keep in the patch of flux
+minimumarea = 30; % num of pixels to keep in the patch of flux
 
 % apply the threshold to identify field line regions
-positivemask = medianimg > fluxthreshold; % white regions of strong "positive" polarity
-negativemask = medianimg < -fluxthreshold; % black regions of strong "negative" polarity
+positivemask = medianimg > fluxthreshold; % white regions of strong lines out of disc
+negativemask = medianimg < -fluxthreshold; % black regions of strong lines into disc 
 % remove areas of fewer than minimumarea pixels of "flux"
 positivemask = bwareaopen(positivemask, minimumarea);
 negativemask = bwareaopen(negativemask, minimumarea);
 
+maskedimg = positivemask | negativemask;
+% find connected regions (bipolar regions)
+cc = bwconncomp(maskedimg);
+% gives array of potential centroids of bipolar regions to fit elipses at
+S = regionprops(cc, 'Centroid', 'MajorAxisLength', 'MinorAxisLength', 'Orientation', ...
+    'Area');
+figure(3); imagesc(maskedimg); colormap("bone"); colorbar;
 % fitting an elipse
 
