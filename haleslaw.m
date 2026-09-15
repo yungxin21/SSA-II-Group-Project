@@ -50,7 +50,7 @@ figure(2); imagesc(medianimg); colormap("bone"); colorbar;
 fluxthreshold = 120; % to be adjusted depending on avg magnetic field strength (TBD)
 % maybe set a flux threshold depending on the images time of
 % observation within the Hale's Law cycle. 
-minimumarea = 30; % num of pixels to keep in the patch of flux
+minimumarea = 75; % num of pixels to keep in the patch of flux
 
 % apply the threshold to identify field line regions
 positivemask = medianimg > fluxthreshold; % white regions of strong lines out of disc
@@ -59,12 +59,26 @@ negativemask = medianimg < -fluxthreshold; % black regions of strong lines into 
 positivemask = bwareaopen(positivemask, minimumarea);
 negativemask = bwareaopen(negativemask, minimumarea);
 
+% positive mask & negative mask put together
 maskedimg = positivemask | negativemask;
+% 4. fitting an elipse
 % find connected regions (bipolar regions)
 cc = bwconncomp(maskedimg);
 % gives array of potential centroids of bipolar regions to fit elipses at
 S = regionprops(cc, 'Centroid', 'MajorAxisLength', 'MinorAxisLength', 'Orientation', ...
     'Area');
-figure(3); imagesc(maskedimg); colormap("bone"); colorbar;
-% fitting an elipse
+figure(3); imagesc(maskedimg); colormap("bone"); colorbar; hold on;
 
+theta = linspace(0, 2*pi, 200);
+for k = 1:numel(S)
+    cx = S(k).Centroid(1); % centroid x coord
+    cy = S(k).Centroid(2); % centroid y coord
+    a = S(k).MajorAxisLength/2;
+    b = S(k).MinorAxisLength/2;
+    angle = deg2rad(-S(k).Orientation);
+    % making a parametric elipse:
+    x = cx + a*cos(theta)*cos(angle) - b*sin(theta)*sin(angle);
+    y = cy + a*cos(theta)*sin(angle) + b*sin(theta)*cos(angle);
+    plot(x, y, 'r', 'LineWidth', 1);
+end
+hold off;
