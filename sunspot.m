@@ -9,7 +9,7 @@
 %semilogy(bins,(spotlesscount), Color="g"); hold on;
 
 % Read in fits image of no limb dark sun for testing
- img=fitsread("SSAII\hmi.Ic_noLimbDark_720s.20240504_040000_TAI.3.continuum.fits","image");
+img=fitsread("SSAII\hmi.Ic_noLimbDark_720s.20240504_040000_TAI.3.continuum.fits","image");
 %img=fitsread("corrected.fits","image");
 %[spotcount,bins] = hist(img(img > 0), bins);
 %semilogy(bins,(spotcount), Color="b"); hold on;
@@ -87,11 +87,110 @@ end
 % with lower. Tried to add values directly but eventually came to the
 % conclusion that adding the masks would work
 
-[penumbraImg,penumbraMask] = sigmaClip(img,5,10);
-[umbraImg,umbraMask] = sigmaClip(img,15,10);
+[penumbraImg,penumbraMask] = sigmaClip(img,6,1);
+[umbraImg,umbraMask] = sigmaClip(img,12,1);
 mergedMask = (penumbraMask+umbraMask);
 imagesc(mergedMask);axis xy, colorbar;
 
 % Sunspot number equation is R=k(10g+f) where f is total number of
 % individual sunspots, g is the number of clusters and k is the scaling
 % factor
+
+% researched flood fill algorithms and trying to code a BFS queue type for
+% identifying how many umbra and penumbra are present in created mask
+
+function [penumbraCount, umbraCount] = floodFillCount(matrix)
+    % setting counts to 0 for penumbra and umbra to -1 to account for the
+    % background value
+    penumbraCount = 0;
+    umbraCount = -1;
+    % getting size of input for boundary for function
+    [numRows, numCols] = size(matrix);
+    
+    % creating copy of matrix to change values to not search values more than
+    % once
+    copyMatrix = matrix;
+    
+    % setting directions for flooding
+    directions = [1 0; -1 0; 0 1; 0 -1];
+    
+    % for loop to search each pixel in the matrix
+    for r = 1:numRows
+        for c = 1:numCols
+            if copyMatrix(r,c) == 0
+                umbraCount = umbraCount + 1;
+    
+                % starting queue for penumbra
+                umbraQueue = [r, c];
+    
+                % setup loop to run while there are values in queue
+                while ~isempty(umbraQueue)
+    
+                    % setting up current coordinates
+                    currentCell = umbraQueue(1,:);
+                    umbraQueue(1,:) = [];
+                    currentRow = currentCell(1);
+                    currentCol = currentCell(2);
+    
+                    % changes current coordinate in loop to -1 to avoid value in loop again
+                    if copyMatrix(currentRow,currentCol) == 0
+                        copyMatrix(currentRow,currentCol) = 1;
+    
+                        % for loop for searching neighbour values
+                        for d = 1:size(directions,1)
+                            nextRow = currentRow + directions(d,1);
+                            nextCol = currentCol + directions(d,2);
+    
+                            % checking if neighbour values are within matrix bounds
+                            if nextRow >= 1 && nextRow <= numRows && nextCol >= 1 && nextCol <= numCols
+                                % if statement for when equal to 1 add to the queue to
+                                % search further from there
+                                if copyMatrix(nextRow,nextCol) == 0
+                                    umbraQueue = [umbraQueue; nextRow, nextCol];
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            if copyMatrix(r,c) == 1
+                penumbraCount = penumbraCount + 1;
+    
+                % starting queue for penumbra
+                penumbraQueue = [r, c];
+    
+                % setup loop to run while there are values in queue
+                while ~isempty(penumbraQueue)
+    
+                    % setting up current coordinates
+                    currentCell = penumbraQueue(1,:);
+                    penumbraQueue(1,:) = [];
+                    currentRow = currentCell(1);
+                    currentCol = currentCell(2);
+    
+                    % changes current coordinate in loop to -1 to avoid value in loop again
+                    if copyMatrix(currentRow,currentCol) == 1
+                        copyMatrix(currentRow,currentCol) = -1;
+    
+                        % for loop for searching neighbour values
+                        for d = 1:size(directions,1)
+                            nextRow = currentRow + directions(d,1);
+                            nextCol = currentCol + directions(d,2);
+    
+                            % checking if neighbour values are within matrix bounds
+                            if nextRow >= 1 && nextRow <= numRows && nextCol >= 1 && nextCol <= numCols
+                                % if statement for when equal to 1 add to the queue to
+                                % search further from there
+                                if copyMatrix(nextRow,nextCol) == 1
+                                    penumbraQueue = [penumbraQueue; nextRow, nextCol];
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+    
+%[penumbraCount, umbraCount] = floodFillCount(mergedMask);
