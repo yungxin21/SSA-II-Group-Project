@@ -33,19 +33,19 @@ diameter_x = xmax - xmin + 1;
 radius_x = diameter_x / 2;
 diameter_y = ymax - ymin + 1;
 radius_y = diameter_y / 2;
-
 radius = floor(mean([radius_x,radius_y]));
 
-% imgframe = img(:,:,1);
-
+% 2. making background = NaN so there is differentiation
+% between background and solar disc
+[cols, rows] = meshgrid(1:size(img,2), 1:size(img,1));
+maskimg = sqrt((cols - center_x).^2 + (rows - center_y).^2) <= radius;
 % median filtering
 medianimg = medfilt2(img, [3 3]);
 % apply the mask to the median filtered image to isolate the solar disc
-maskedimg = medianimg .* maskimg;
+medianimg(~maskimg) = NaN; 
 figure(2); imagesc(medianimg); colormap("bone"); colorbar;
-figure(3); imagesc(maskedimg); colormap("bone"); colorbar;
 
-% proceeding with median filtering (clearest filtering):
+% 3. proceeding with median filtering (clearest filtering):
 fluxthreshold = 50; % to be adjusted depending on avg magnetic field strength (TBD)
 % maybe set a flux threshold depending on the images time of
 % observation within the Hale's Law cycle. 
@@ -54,7 +54,9 @@ minimumarea = 20; % num of pixels to keep in the patch of flux
 % apply the threshold to identify field line regions
 positivemask = medianimg > fluxthreshold; % white regions of strong "positive" polarity
 negativemask = medianimg < -fluxthreshold; % black regions of strong "negative" polarity
-% remove areas of fewer than minimumarea pixels of "flux" 
+% remove areas of fewer than minimumarea pixels of "flux"
 positivemask = bwareaopen(positivemask, minimumarea);
 negativemask = bwareaopen(negativemask, minimumarea);
+
+% fitting an elipse
 
