@@ -38,7 +38,6 @@ function corrected_img = limbDarkness(fits_input,plot_spacing,corrected_fig_num)
     % calculate the radial distance (r) from the center for every pixel
     r_mask = sqrt((X - center_x).^2 + (Y - center_y).^2);
     
-
     % find limb darkening coefficients using fit function.
     % could be a function block on its own.
     coeff_mask = (r_mask <= 0.95*radius_sun) & (img > 0); 
