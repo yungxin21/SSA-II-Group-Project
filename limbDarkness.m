@@ -27,7 +27,7 @@ function corrected_img = limbDarkness(fits_input,plot_spacing,corrected_fig_num)
     diameter_y=ymax-ymin+1;
     radius_y=diameter_y/2;
     
-    radius = floor(mean([radius_x,radius_y])); % the radius of the sun in pixels
+    radius_sun = floor(mean([radius_x,radius_y])); % the radius of the sun in pixels
     
     % 2. Correct for limb darkening.
     % SDO HMI continuum image wavelength: 617.3 nm (limb darkness is
@@ -36,26 +36,55 @@ function corrected_img = limbDarkness(fits_input,plot_spacing,corrected_fig_num)
     % grid of pixel coordinates
     [X, Y] = meshgrid(1:size(img, 2), 1:size(img, 1));
     % calculate the radial distance (r) from the center for every pixel
-    r = sqrt((X - center_x).^2 + (Y - center_y).^2);
+    r_mask = sqrt((X - center_x).^2 + (Y - center_y).^2);
     
-    % here mu = cos(theta), where theta is the heliocentric angle
-    mu = sqrt(max(0, 1 - (r ./ radius).^2)); 
-    % limb darkening coefficients (see references):
-    u1 = 0.836; 
-    u2 = -0.204;
+
+    % find limb darkening coefficients using fit function.
+    % could be a function block on its own.
+    coeff_mask = (r_mask <= 0.95*radius_sun) & (img > 0); 
+    r_coeff = r_mask(coeff_mask);
+    I_coeff = img(coeff_mask);
+    % this mu_coeff is based on the 95% solar radius mask.
+    mu_coeff = sqrt(1 - (r_coeff ./ radius_sun).^2); 
+
+    % normalize intensity by center intensity (I_0)
+    % can be somewhat arbitrary to define what counts as the "center"
+    % here we set 0.1 of R_sun.
+    center_mask = (r_mask < 0.10 * radius_sun);
+    I_0 = mean(img(center_mask)); 
+    I_norm = I_coeff ./ I_0;
+
+    % x in fittype represents mu
+    quad_law = fittype('1 - u1 - u2 + u1 * x + u2 * (x ^ 2)', 'independent', 'x', 'coefficients', {'u1', 'u2'});
     
+    fit_options = fitoptions(quad_law);
+    fit_options.StartPoint = [0.836, -0.204]; % see Cai et al. 2024 on overleaf references
+    % non-linear least-squares fitting
+    [fit_result, ~] = fit(mu_coeff, I_norm, quad_law, fit_options);
+    u1 = fit_result.u1;
+    u2 = fit_result.u2;
+    % function code block would end here, returning u1 and u2.
+
     % equals ~1 at the around the centre (i.e, no correction) and near 0 around
     % the edges (a lot of correction)
-    limb_fit = 1 - u1 - u2 + u1 * mu + u2 * (mu).^2;
+    % official formula is 1 - u1*(1-mu) - u2*(1-mu).^2, but here 2*u2*mu is
+    % omitted.
+    % here mu = cos(theta), where theta is the heliocentric angle, based on
+    % the original r_mask.
+    mu = sqrt(max(0, 1 - (r_mask ./ radius_sun).^2));
+    limb_fit = 1 - u1 - u2 + u1 * mu + u2 * (mu .^ 2);
     
-    % need to change this to work with sunspot.m
-    solar_disk_mask = (r <= radius); % basically just 0 where the sun isnt
+    solar_disk_mask = (r_mask <= radius_sun); % basically just 0 where the sun isnt
     % and 1 where the sun is, so correction is only applied on sun and not background
-    % solar_disk_mask(solar_disk_mask<0) = NaN;
+    % different from coeff_mask, since it encompasses the whole sun.
     
     % apply the corrected intensity values to the array of 0s and 1s
     corrected_img = img;
     corrected_img(solar_disk_mask) = img(solar_disk_mask) ./ limb_fit(solar_disk_mask);
+    
+    % normalise intensity like how JSOC does
+    corrected_img = (corrected_img - min(corrected_img>0)) ./ (max(corrected_img(:))-min(corrected_img>0));
+    img = (img - min(img>0)) ./ (max(img(:))-min(img>0));
 
     % block of code to plot corrected image
     if (corrected_fig_num > 0) 
@@ -71,18 +100,18 @@ function corrected_img = limbDarkness(fits_input,plot_spacing,corrected_fig_num)
         correctedModes = [];
         originalModes = [];
         % view intensity over r/r_solar plot.
-        for i=1:plot_spacing:radius
-            ring = (round(r)==round(i));
+        for i=1:plot_spacing:radius_sun
+            ring = (round(r_mask)==round(i));
             correctedModes = [correctedModes, mode(corrected_img(ring))]; 
             originalModes = [originalModes, mode(img(ring))];
         end
-        figure(2); plot((1:plot_spacing:radius)/radius,correctedModes); hold on;
-        plot((1:plot_spacing:radius)/radius,originalModes); hold off;
+        figure(2); plot((1:plot_spacing:radius_sun)/radius_sun,correctedModes); hold on;
+        plot((1:plot_spacing:radius_sun)/radius_sun,originalModes); hold off;
         title('Intensity over Radius Plot')
         xlabel('r/r_☉')
         ylabel('intensity')
         xlim([0 1.25])
-        ylim([0 55000])
+        ylim([0 1.25])
     end
 
     % retaining HDU in FITS files can only be achieved using low-level fits
