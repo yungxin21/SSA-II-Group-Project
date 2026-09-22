@@ -25,19 +25,7 @@ figure(1); imagesc(img); colormap("bone"); colorbar;
 center_x = 1024;
 center_y = 1024;
 % find the first and last index with positive values larger than 1000
-rowvals = img(center_y, :); % row at centre_y
-colvals = img(: , center_x); % col at center_x
-xmin = find(rowvals/1000 >= 0, 1, 'first'); 
-xmax = find(rowvals/1000 >= 0, 1, 'last');
-ymin = find(colvals/1000 >= 0, 1, 'first');
-ymax = find(colvals/1000 >= 0, 1, 'last');
-
-diameter_x = xmax - xmin + 1;
-radius_x = diameter_x / 2;
-diameter_y = ymax - ymin + 1;
-radius_y = diameter_y / 2;
-radius = floor(mean([radius_x,radius_y]));
-radius = 935;
+radius = 935; % empirically chosen value which trims limb within an acceptable amount
 
 % 2. making background = NaN so there is differentiation
 % between background and solar disc
@@ -87,4 +75,6 @@ for k = 1:numel(S)
 end
 
 % 5. sunspot group/individual spot classification using elipses
+
 hold off;
+
