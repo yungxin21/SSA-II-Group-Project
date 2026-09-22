@@ -12,14 +12,17 @@ function [maskedImg, mask] = sigmaClip(data, nSigma, maxI)
         validData = data(mask & ~nanMask);
         if isempty(validData), break; end
         % Running statistics on valid data and ommiting clipped values
+        disp("isrunning1");
         centreVal = mode(validData);
         stdVal = std(validData);
         if stdVal == 0, break; end
+        disp("isrunning2");
         % Defining boundaries
         lBound = centreVal - nSigma * stdVal;
         % Use bounds to generate new mask 
         newMask = mask & (data >= lBound);
         if isequal(newMask,mask), break; end
+        disp("isrunning3");
         mask = newMask;
     end
     % Replacing clipped values to keep same matrix dimensions
