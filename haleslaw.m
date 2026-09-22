@@ -14,6 +14,8 @@
 % NOTE: raw archive files from the 512-channel spectrograph from kitt peak space telescope give
 % fits files in 2048x2048x5 (3D array). use 1st channel (:,:,1) by default
 img = fitsread("svsm_8542l_S2_20130419_1605.fits");
+continuumimg = fitsread("hmi.Ic_720s.20130419_160000_TAI.1.continuum.fits", "image");
+continuumsizedimg = imresize(continuumimg,0.5,"box");
 img = img(:,:,1);
 % raw image
 figure(1); imagesc(img); colormap("bone"); colorbar;
@@ -35,6 +37,7 @@ radius_x = diameter_x / 2;
 diameter_y = ymax - ymin + 1;
 radius_y = diameter_y / 2;
 radius = floor(mean([radius_x,radius_y]));
+radius = 935;
 
 % 2. making background = NaN so there is differentiation
 % between background and solar disc
@@ -67,12 +70,15 @@ cc = bwconncomp(maskedimg);
 % gives array of potential centroids of bipolar regions to fit elipses at
 S = regionprops(cc, 'Centroid', 'MajorAxisLength', 'MinorAxisLength', 'Orientation', ...
     'Area');
-figure(3); imagesc(maskedimg); colormap("bone"); colorbar; hold on;
+% comparing with continuum img taken same time
+% note: as hmi images only goes back so far, there is a limited range which we can
+% compare with magnetograms.
+figure(3); imagesc(continuumsizedimg); colormap("bone"); colorbar; hold on;
 
 theta = linspace(0, 2*pi, 200);
 for k = 1:numel(S)
     cx = S(k).Centroid(1); % centroid x coord
-    cy = S(k).Centroid(2); % centroid y coord
+    cy = S(k).Centroid(2); % centroid y coord 
     a = S(k).MajorAxisLength/2;
     b = S(k).MinorAxisLength/2;
     angle = deg2rad(-S(k).Orientation);
