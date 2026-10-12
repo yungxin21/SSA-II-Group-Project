@@ -1,4 +1,4 @@
-function corrected_img = limbDarkness(fits_input,plot_spacing,corrected_fig_num)
+function [corrected_img, radius_sun] = limbDarkness(fits_input,plot_spacing,corrected_fig_num)
     img = fitsread(fits_input, "image");
 
     % Magnetogram option (in separate branch)
@@ -99,9 +99,9 @@ function corrected_img = limbDarkness(fits_input,plot_spacing,corrected_fig_num)
         figure(corrected_fig_num);
         imagesc(corrected_img)
         set(gca, "YDir", "normal");
-        colormap("bone");
+        colormap;
         colorbar;
-        clim([0, 1]); % can be lethal
+        % clim([0, 1]); % can be lethal
     end
 
     % adjustable intensity plot with normalized radii.
@@ -119,8 +119,8 @@ function corrected_img = limbDarkness(fits_input,plot_spacing,corrected_fig_num)
         title('Normalised Intensity over Normalised Radius Plot')
         xlabel('r/r_☉')
         ylabel('I(μ)/I(0)')
-        xlim([0 1.25])
-        ylim([0 1.25])
+        xlim([0 1.3])
+        ylim([0 1.3])
     end
 
     % retaining HDU in FITS files can only be achieved using low-level fits
