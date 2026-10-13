@@ -1,4 +1,4 @@
-function corrected_img = limbDarkness(fits_input,plot_spacing,corrected_fig_num)
+function [corrected_img, radius_sun] = limbDarkness(fits_input,plot_spacing,corrected_fig_num)
     img = fitsread(fits_input, "image");
 
     % Magnetogram option (in separate branch)
@@ -38,19 +38,18 @@ function corrected_img = limbDarkness(fits_input,plot_spacing,corrected_fig_num)
     % calculate the radial distance (r) from the center for every pixel
     r_mask = sqrt((X - center_x).^2 + (Y - center_y).^2);
     
+
     % find limb darkening coefficients using fit function.
     % could be a function block on its own.
-    coeff_mask = (r_mask <= 0.95*radius_sun) & (img > 0); 
+    coeff_mask = (r_mask <= 0.95*radius_sun);
     r_coeff = r_mask(coeff_mask);
     I_coeff = img(coeff_mask);
     % this mu_coeff is based on the 95% solar radius mask.
     mu_coeff = sqrt(1 - (r_coeff ./ radius_sun).^2); 
 
     % normalize intensity by center intensity (I_0)
-    % can be somewhat arbitrary to define what counts as the "center"
-    % here we set 0.1 of R_sun.
-    center_mask = (r_mask < 0.10 * radius_sun);
-    I_0 = mean(img(center_mask)); 
+    mask = (r_mask < 0.10 * radius_sun); % defined as a circle within 10% of the sun's radius
+    I_0 = mean(img(mask)); 
     I_norm = I_coeff ./ I_0;
 
     % x in fittype represents mu
@@ -72,26 +71,37 @@ function corrected_img = limbDarkness(fits_input,plot_spacing,corrected_fig_num)
     % the original r_mask.
     mu = sqrt(max(0, 1 - (r_mask ./ radius_sun).^2));
     limb_fit = 1 - u1 - u2 + u1 * mu + u2 * (mu .^ 2);
-    
-    solar_disk_mask = (r_mask <= radius_sun); % basically just 0 where the sun isnt
+
+    solar_disk_mask = (r_mask <= radius_sun);% basically just 0 where the sun isnt
     % and 1 where the sun is, so correction is only applied on sun and not background
     % different from coeff_mask, since it encompasses the whole sun.
+    img(~solar_disk_mask) = -0.0923; 
     
-    % apply the corrected intensity values to the array of 0s and 1s
+    % apply the corrected intensity values to the array of 0s and 1s'
     corrected_img = img;
     corrected_img(solar_disk_mask) = img(solar_disk_mask) ./ limb_fit(solar_disk_mask);
     
-    % normalise intensity like how JSOC does
-    corrected_img = (corrected_img - min(corrected_img>0)) ./ (max(corrected_img(:))-min(corrected_img>0));
-    img = (img - min(img>0)) ./ (max(img(:))-min(img>0));
+    % normalise intensity (mean)
+    % img(solar_disk_mask) = (img(solar_disk_mask)-min(img(solar_disk_mask))) ./ (max(img(solar_disk_mask))-min(img(solar_disk_mask)));
+    % Preserve invalid/background pixels during normalization.
+    % intensityRange = max(corrected_img(solar_disk_mask)) - min(corrected_img(solar_disk_mask));
+    % corrected_img(solar_disk_mask) = (corrected_img(solar_disk_mask) - min(corrected_img(solar_disk_mask))) / intensityRange;
+    
+
+    %normalise intensity (mode)
+    % disp(mode(img(mask)));
+    img(solar_disk_mask) = img(solar_disk_mask) ./ mode(img(mask));
+    corrected_img(solar_disk_mask) = corrected_img(solar_disk_mask) ./ mode(corrected_img(mask));
+
 
     % block of code to plot corrected image
     if (corrected_fig_num > 0) 
         figure(corrected_fig_num);
         imagesc(corrected_img)
         set(gca, "YDir", "normal");
-        colormap("bone");
+        colormap;
         colorbar;
+        % clim([0, 1]); % can be lethal
     end
 
     % adjustable intensity plot with normalized radii.
@@ -106,11 +116,11 @@ function corrected_img = limbDarkness(fits_input,plot_spacing,corrected_fig_num)
         end
         figure(2); plot((1:plot_spacing:radius_sun)/radius_sun,correctedModes); hold on;
         plot((1:plot_spacing:radius_sun)/radius_sun,originalModes); hold off;
-        title('Intensity over Radius Plot')
+        title('Normalised Intensity over Normalised Radius Plot')
         xlabel('r/r_☉')
-        ylabel('intensity')
-        xlim([0 1.25])
-        ylim([0 1.25])
+        ylabel('I(μ)/I(0)')
+        xlim([0 1.3])
+        ylim([0 1.3])
     end
 
     % retaining HDU in FITS files can only be achieved using low-level fits
