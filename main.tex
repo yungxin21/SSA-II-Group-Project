@@ -28,7 +28,7 @@
 
 % First page
 \title{Space Science and Astrophysics II Working Log}
-\author{Yung Xin Hwang, Daniel Crispin, Harvey Forster, Alexander Smith, Andre Konecny. \\ Supervisor: Sam Tuttle}
+\author{Yung Xin Hwang, Daniel Crispin, Harvey Forster, Alexander Smith. \\ Supervisor: Sam Tuttle}
 \date{11th August 2026}
 
 \begin{document}
@@ -47,7 +47,7 @@ Here are the steps to set up a local repository on your device:
 \end{enumerate}
 Adding files to the cloud repo:
 \begin{enumerate}
-    \item create a temporary "branch" by typing 'branchDetails = createBranch(repo,name)'. Then switch to it by typing 'branchDetails = switchBranch(repo,name)'
+    \item create a temporary "branch" by typing 'branchDetails = createBranch(repo,name)'. Then switch to it by typing 'branchDetails = switchBranch(repo,name)'. Make sure the 'name' inside these branches is what you want the branches name to be.
     \item Add files by typing 'add(repo,"filename.m")'. (\href{https://au.mathworks.com/help/matlab/ref/matlab.git.gitrepository.add.html#mw_c6df5671-ed7b-45f0-8b1b-a60cf998ae38}{documentation})
     \item commit with a message by typing 'commitDetails = commit(repo,Message=commitMessage)' into the command window, where the commitMessage is what you are trying to do (in between ""). (\href{https://au.mathworks.com/help/matlab/ref/matlab.git.gitrepository.commit.html}{documentation})
     \item then type 'push(repo)'. (\href{https://au.mathworks.com/help/matlab/ref/matlab.git.gitrepository.push.html}{documentation})
@@ -93,6 +93,38 @@ Note: you can then read the fits file you obtain into MATLAB via:  fitsread("fil
     \item To load the image into MATLAB use img = fitsread("filename","image"); this produces an array of values in a table.
 \end{enumerate}
 
+
+\subsection{Accessing header files (HDU) from the FITS files}
+Through DS9:
+\begin{enumerate}
+    \item Open the FITS file on DS9.
+    \item go to the WCS tab, and press WCS Parameters.
+    \item A window should pop up, giving you the values for the header file.
+\end{enumerate}
+Through MATLAB:
+\begin{enumerate}
+    \item type in "info = fitsinfo("examplefile.fits");" either in the terminal or as a line of code in your .m file.
+    \item Run the .m file (if as a line of code)
+    \item You can access these values in the Workspace Window (default is bottom left) by double clicking on the "info" variable.
+    You can also access these values by programming, using the following: \newline
+    {\centering keywords = info.Image.Keywords; \\
+    valIdx = strcmp(keywords(:,1), 'EXAMPLE'); \\
+    exampleValue = keywords\{valIdx, 2\};
+    \par}
+\end{enumerate}
+
+
+\subsection{Downloading required toolboxes from MATLAB}
+There are 2 toolboxes we use, the curve fitting toolbox and image processing toolbox (for the limb darkness correction and sunspot group ellipses respectively)
+\begin{enumerate}
+    \item In the "home" tab of MATLAB, press on the "add-on" icon. A new add-on explorer window should open.
+    \item Click on the curve-fitting toolbox and install it, following the prompts MATLAB gives.
+    \item Repeat for the image processing toolbox.
+\end{enumerate}
+
+
+
+
 \section{Notes and Images}
 \subsection{Practical Sessions}
 \includegraphics[width=0.7\textwidth]{images/20260811_120248.jpg} \\
@@ -123,19 +155,39 @@ To properly map the locations and then the distances between sunspots from the i
     \item H type: Decaying C, D, E and F types, A single spot group with penumbra that is larger than 2.5 degrees in diameter. Sometimes has other spots with it.
     \item J type: Same as H but less than 2.5 degrees in diameter.
     \includegraphics[width=0.5\textwidth]{images/sunspotg.jpg}
+    \item Sunspot Bulletin for 2024 May, (\url{https://www.sidc.be/sunspots/bulletins/monthly/monthlybull202405.pdf})
 \end{enumerate}
 
+\subsection{Modal Intensity Plot}
+{\centering \includegraphics[width=0.75\textwidth]{images/intensity plot.png} \\
+An intensity plot over normalised radius for the smallest spacing step.
+\par}
+Improved Version with normalised intensity:
+{\centering \includegraphics[width=0.75\textwidth]{images/intensity plot2.png}
+\par}
+
+\subsection{Hale's Law}
+{\centering 
+\includegraphics[width=0.75\textwidth]{images/magnetogram.png} \par}
+\begin{itemize}
+    \item white regions: magnetic field lines coming out of the sun from our POV
+    \item black regions: magnetic field lines going into the sun
+    \item gray regions: no strong magnetic field lines present
+\end{itemize}
+need to use these over a 44 year period (2 Hale's Law cycles)\\
+    
+
 \section{Roles and Responsibilities}
-Yung - limb darkness correction, \\
+Yung - limb darkness correction, sunspot group numbering\\
 Harvey - Co-ordinate transform \\
 Daniel - limb darkness correction, \\
-Alex - defining sun spots and groups, \\
-Andre - \\sunspot/groups definitions and construction of relevent code, \\
-Andre - \\
+Alex - defining sun spots and groups, figuring out a microsoft paint "flood" technique to differentiate single sun spots \\
+\\
 
 \subsection{Stage 1 Breakdown}
 \begin{itemize}
     \item Limb darkness correction (Yung and Daniel)
+    \item Hale's law magnetogram verification (Daniel)
     \item Sunspot detection
     \item Sunspot characterisation
     \begin{itemize}
@@ -155,16 +207,17 @@ Andre - \\
 \end{itemize}
 
 
-\section{References}
-wavelength-dependent limb darkening \cite{10.1119/5.0061547}: \href{https://pubs.aip.org/aapt/pte/article-abstract/60/9/732/2848476/Wavelength-Dependent-Solar-Limb-Darkening-with}
-https://pubs.aip.org/aapt/pte/article-abstract/60/9/732/2848476/Wavelength-Dependent-Solar-Limb-Darkening-with\\
-best-fit limb darkening laws \cite{neilsonlester2013}: \href{https://www.aanda.org/articles/aa/full_html/2013/06/aa21502-13/aa21502-13.html}{https://www.aanda.org/articles/aa/full\_html/2013/06/aa21502-13/aa21502-13.html} \\
-coefficients for limb-darkening \cite{Cai_2024}:
-\href{https://iopscience.iop.org/article/10.3847/1538-4357/ad793b}
-{https://iopscience.iop.org/article/10.3847/1538-4357/ad793b} \\
-sun spot and group definitions: \href{https://www.sws.bom.gov.au/Educational/2/2/3}{https://www.sws.bom.gov.au/Educational/2/2/3}\\
-lifespan of sunspots with formula: \href{https://www.sws.bom.gov.au/Educational/2/2/2}{https://www.sws.bom.gov.au/Educational/2/2/2}\\
-classifcation for sunspots and groups: \href{https://www.aavso.org/zurich-classification-system-sunspot-groups}{https://www.aavso.org/zurich-classification-system-sunspot-groups}\\
+% \section{References}
+% wavelength-dependent limb darkening \cite{10.1119/5.0061547}: \href{https://pubs.aip.org/aapt/pte/article-abstract/60/9/732/2848476/Wavelength-Dependent-Solar-Limb-Darkening-with}
+% https://pubs.aip.org/aapt/pte/article-abstract/60/9/732/2848476/Wavelength-Dependent-Solar-Limb-Darkening-with\\
+% best-fit limb darkening laws \cite{neilsonlester2013}: \href{https://www.aanda.org/articles/aa/full_html/2013/06/aa21502-13/aa21502-13.html}{https://www.aanda.org/articles/aa/full\_html/2013/06/aa21502-13/aa21502-13.html} \\
+% coefficients for limb-darkening \cite{Cai_2024}:
+% \href{https://iopscience.iop.org/article/10.3847/1538-4357/ad793b}
+% {https://iopscience.iop.org/article/10.3847/1538-4357/ad793b} \\
+% sun spot and group definitions: \href{https://www.sws.bom.gov.au/Educational/2/2/3}{https://www.sws.bom.gov.au/Educational/2/2/3}\\
+% lifespan of sunspots with formula: \href{https://www.sws.bom.gov.au/Educational/2/2/2}{https://www.sws.bom.gov.au/Educational/2/2/2}\\
+% classifcation for sunspots and groups: \href{https://www.aavso.org/zurich-classification-system-sunspot-groups}{https://www.aavso.org/zurich-classification-system-sunspot-groups}\\
+% https://ui.adsabs.harvard.edu/abs/2006A%26A...449..791T/abstract Coordinate transformations for solar coordinates/mapping
 
 \nocite{*}
 \printbibliography
