@@ -8,8 +8,17 @@
 % end
 
 
-data = fitsread("sunspottest.fits", "image");
-solarRadius = 1966;
+[data, solarRadius] = limbDarkness("hmi.Ic_720s.20240504_040000_TAI.3.continuum.fits",0,2);
+
+info = fitsinfo("hmi.Ic_720s.20190413_210000_TAI.3.continuum.fits");
+keywords = info.Image.Keywords; % retrieve info from HDU file.
+valIdx1 = strcmp(keywords(:,1), 'CDELT1');
+valIdx2 = strcmp(keywords(:,1), 'CRPIX1');
+valIdx3 = strcmp(keywords(:,1), 'CRPIX2');
+pixelScale = keywords{valIdx1, 2}; % arcsec/pixel redundant?
+% x and y centers of the Sun. 
+u_center = round(keywords{valIdx2, 2});
+v_center = round(keywords{valIdx3, 2});
 
 % This takes the array of data from the fits file and composes two seperate
 % arrays called "row" and "col". These are effectively 2 arrays with the
@@ -23,8 +32,8 @@ solarRadius = 1966;
 
 % x - 2048.5, 2048.5 - y is done to centre the data properly.
 
-u_centered = col - 2048;
-v_centered = row - 2048;
+u_centered = col - u_center;
+v_centered = row - v_center;
 
 %This defines the x and y transformed co-ordinate arrays as an array of
 %zeroes so that they can be iterated on in the transform for loop.
@@ -35,8 +44,8 @@ z_trans = zeros(size(u_centered,1), size(u_centered,2));
 z_heeq = zeros(size(v_centered,1), size(v_centered,2));
 %Defines heliocentric co-ordinates for the Z axis.
 
-phi_steps = 2000;
-theta_steps = 1000;
+phi_steps = 4096;
+theta_steps = 4096;
 map = zeros(phi_steps, theta_steps);
 map_count = zeros(phi_steps, theta_steps);
 map_norm = zeros(phi_steps, theta_steps);
@@ -95,8 +104,11 @@ end
 % max(1,map_count) when doing the map normalisation as this avoids dividing
 % by zero errors.
 
+mask = (map_norm == 0);
+map_norm = regionfill(map_norm, mask);
+
 %%
-imagesc(map_norm);
+figure(1); imagesc(map_norm); colorbar; set(gca, "YDir", "normal");
 
 %scatter(phi_trans(:) , theta_trans(:), [], intensity);
 %z_bins = 0:5e14:5e17;
