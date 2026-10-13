@@ -50,32 +50,26 @@ sunMask = sqrt((X - center_x).^2 + (Y - center_y).^2) < (0.99*radius_sun);
 % Restrict segmentation to the solar disk and remove background pixels.
 img(~sunMask) = NaN;
 clippedImg = sigmaClip(img,0,1); % full image.
-[penumbraImg, penumbraMask] = sigmaClip(img,1,1);
-[umbraImg, umbraMask] = sigmaClip(img,2,1);
+[~, penumbraMask] = sigmaClip(img,1,1);
+[~, umbraMask] = sigmaClip(img,2,1);
 
 % bwareaopen is currently not working as expected
-penumbraMask = bwareaopen(penumbraMask, 75);
-umbraMask = bwareaopen(umbraMask, 225);
-mergedMask = (penumbraMask | umbraMask);
+penumbraMask = ~bwareaopen(penumbraMask==0, 50);
+umbraMask = ~bwareaopen(umbraMask==0, 100);
+% mergedMask = (penumbraMask | umbraMask);
 
 %%
 
 % figure(1); imagesc(penumbraImg+umbraImg); colormap; colorbar; set(gca, "YDir", "normal");
+figure(1); imagesc(umbraMask); colormap; colorbar; set(gca, "YDir", "normal");
+figure(3); imagesc(penumbraMask); colormap; colorbar; set(gca, "YDir", "normal");
 figure(2); imagesc(clippedImg); colormap; colorbar; set(gca, "YDir", "normal"); hold on;
+
 
 % hold off; % temp line
 % locate places to place ellipsoids, retrieved from magnetograms branch
 cc = bwconncomp((penumbraMask == 0) & sunMask);
 S = regionprops(cc, 'Centroid', 'MajorAxisLength', 'MinorAxisLength', 'Orientation', 'Area');
-
-% draw individual sunspot ellipsoids
-% current problem: centroids within other ellipsoids still produce an
-% ellipsoid. Since bwconncomp is just BFS, isolated penumbra will be
-% affected.
-
-% solution: use rangesearch to find neighboring centroids within
-% major/minor axis length, and essentially shifting the centroid to produce a new ellipsoid.
-
 
 theta = linspace(0,2*pi,1000);
 for k = 1:numel(S)
@@ -96,7 +90,9 @@ minGroupArea = 1000;
 % idea is to find neighboring centroids within a certain distance, then
 % merging them into one group and redrawing new ellipsoids on top of
 % existing ones
-g = ;
+au = physicalConstants("astronomicalUnit");
+Ls = au * sind(1/3600);
+
 
 hold off;
 
