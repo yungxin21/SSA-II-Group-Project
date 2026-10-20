@@ -1,16 +1,20 @@
 limbDarkness;
 continuumimg = corrected_img;
 % note: image processing toolbox is required
-img = fitsread("hmi.M_720s.20130419_160000_TAI.1.magnetogram.fits", "image");
-maginfo = fitsinfo("hmi.M_720s.20130419_160000_TAI.1.magnetogram.fits");
+img = fitsread("hmi.M_720s.20190413_210000_TAI.3.magnetogram.fits", "image");
+maginfo = fitsinfo("hmi.M_720s.20190413_210000_TAI.3.magnetogram.fits");
 % continuumimg = fitsread("hmi.Ic_720s.20130419_160000_TAI.1.continuum.fits", "image");
-continfo = fitsinfo("hmi.Ic_720s.20130419_160000_TAI.1.continuum.fits");
+continfo = fitsinfo("hmi.Ic_720s.20190413_210000_TAI.3.continuum.fits");
 
 % raw image
 figure(1); imagesc(img); colormap("bone"); colorbar; % will probably be white because of problems with colour scaling
 
 % 1. solar disc
 % assuming 
+info = fitsinfo("hmi.Ic_720s.20190413_210000_TAI.3.continuum.fits");
+keywords = info.Image.Keywords; % retrieve info from HDU file.
+valIdx1 = strcmp(keywords(:,1), 'CDELT1');
+pixelScale = keywords{valIdx1, 2}
 center_x = 2048;
 center_y = 2048;
 % find the first and last index with positive values larger than 1000
@@ -81,7 +85,7 @@ hold off;
 % 5. sunspot group/individual spot identification using ellipses & also
 % cleanup bad spots
 
-cdelt1 = 0.5043;  cdelt2 = 0.5043; % arcsec/pixel from the HMI fitsinfo (cant be bothered not hardcoding, should be same across all imgs)
+cdelt1 = pixelScale;
 minsize_arcsec = 2; % ellipse must be at least this many arcseconds big to be counted
 groupseperation_arcsec = 80; % regions closer than this are linked into one group (emperical)
 groupseparation_px = groupseperation_arcsec / cdelt1; % max ellipse separation in pixels
@@ -165,5 +169,3 @@ function p = ellipsepoints(c, a, b, an, theta)
 p = [c(1) + a*cos(theta)*cos(an) - b*sin(theta)*sin(an); ...
     c(2) + a*cos(theta)*sin(an) + b*sin(theta)*cos(an)];
 end
-
-% pain in the ass im never doing this again. on garry
