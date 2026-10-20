@@ -1,7 +1,9 @@
+limbDarkness;
+continuumimg = corrected_img;
 % note: image processing toolbox is required
 img = fitsread("hmi.M_720s.20130419_160000_TAI.1.magnetogram.fits", "image");
 maginfo = fitsinfo("hmi.M_720s.20130419_160000_TAI.1.magnetogram.fits");
-continuumimg = fitsread("hmi.Ic_720s.20130419_160000_TAI.1.continuum.fits", "image");
+% continuumimg = fitsread("hmi.Ic_720s.20130419_160000_TAI.1.continuum.fits", "image");
 continfo = fitsinfo("hmi.Ic_720s.20130419_160000_TAI.1.continuum.fits");
 
 % raw image
@@ -79,16 +81,16 @@ hold off;
 % 5. sunspot group/individual spot identification using ellipses & also
 % cleanup bad spots
 
-cdelt1 = 0.5043;  cdelt2 = 0.5043; % arcsec/pixel from the HMI fitsinfo (cant be bothered not hardcoding)
+cdelt1 = 0.5043;  cdelt2 = 0.5043; % arcsec/pixel from the HMI fitsinfo (cant be bothered not hardcoding, should be same across all imgs)
 minsize_arcsec = 2; % ellipse must be at least this many arcseconds big to be counted
 groupseperation_arcsec = 80; % regions closer than this are linked into one group (emperical)
 groupseparation_px = groupseperation_arcsec / cdelt1; % max ellipse separation in pixels
-mingrouparea = 200; % minimum group flux area (arcsec^2) (emperical and might change)
+mingrouparea = 150; % minimum group flux area (arcsec^2) (emperical and might change)
 
 % the higher this is, more noise and limb darkening effects might be kept
 spotfrac = 0.95; % obviously limb darkening isnt an issue when the other code is applied
 
-pixarea = abs(cdelt1 * cdelt2); % arcsec^2 per pixel
+pixarea = cdelt1 * cdelt2; % arcsec^2 per pixel
 
 % span of an ellipse (semi-axes a,b, angle an) along x and y, in arcsec
 span = @(a,b,an) [2*sqrt((a*cos(an))^2 + (b*sin(an))^2)*abs(cdelt1), ...
@@ -133,7 +135,7 @@ for i = 1:numel(ids)
     [V, D] = eig(Q.'*Q/size(Q,1)); % points position along the ellipse's semimajor axis
     [~, o] = sort(diag(D), 'descend');
     u = Q*V(:,o(1));  w = Q*V(:,o(2));
-    a0 = max(abs(u));  b0 = max(max(abs(w)), 1); % best semi major/minor axis for the ellipse
+    a0 = max(abs(u));  b0 = max(max(abs(w)), 1); % best semi major/minor axis for the ellipse (max means points on edge)
     s = max(sqrt((u/a0).^2 + (w/b0).^2)); % scale so every member fits inside
     GE(end+1) = struct('c',c, 'a',1.05*s*a0, 'b',1.05*s*b0, ...
         'ang',atan2(V(2,o(1)), V(1,o(1))), 'members',m, 'area',grouparea); 
