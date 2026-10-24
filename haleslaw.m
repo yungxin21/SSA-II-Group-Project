@@ -1,5 +1,4 @@
-limbDarkness;
-continuumimg = corrected_img;
+continuumimg = fitsread("hmi.Ic_720s.20190413_210000_TAI.3.continuum.fits");
 % note: image processing toolbox is required
 img = fitsread("hmi.M_720s.20190413_210000_TAI.3.magnetogram.fits", "image");
 maginfo = fitsinfo("hmi.M_720s.20190413_210000_TAI.3.magnetogram.fits");

@@ -1,6 +1,7 @@
 close all
 clear all
-
+haleslaw;
+g = groupnumber;
 % find how close sunspots have to be to count as a group using Zurich
 % classification.
 % A, B, and C types are assumed to be between 1-10 degrees of solar
@@ -90,8 +91,8 @@ minGroupArea = 1000;
 % idea is to find neighboring centroids within a certain distance, then
 % merging them into one group and redrawing new ellipsoids on top of
 % existing ones
-au = physicalConstants("astronomicalUnit");
-Ls = au * sind(1/3600);
+% au = physicalConstants("astronomicalUnit");
+% Ls = au * sind(1/3600);
 
 
 hold off;
