@@ -1,6 +1,7 @@
 close all
 clear all
-
+haleslaw;
+g = groupnumber;
 % find how close sunspots have to be to count as a group using Zurich
 % classification.
 % A, B, and C types are assumed to be between 1-10 degrees of solar
@@ -21,7 +22,7 @@ clear all
 % ellipse in polar 
 % r^2 = ((r^2)*(cos(theta))^2)/a^2 + ((r^2)*(sin(theta))^2)/b^2;
 
-[img,radius_sun] = limbDarkness("hmi.Ic_720s.20240504_040000_TAI.3.continuum.fits",1,0);
+[img,radius_sun] = limbDarkness("hmi.Ic_720s.20190413_210000_TAI.3.continuum.fits",1,0);
 % need to clip edges of the Sun to exclude background space (producing
 % intensity values of ~0)
 

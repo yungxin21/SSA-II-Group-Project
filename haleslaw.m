@@ -1,4 +1,4 @@
-continuumimg = fitsread("hmi.Ic_720s.20190413_210000_TAI.3.continuum.fits");
+continuumimg = fitsread("hmi.Ic_720s.20190413_210000_TAI.3.continuum.fits", "image");
 % note: image processing toolbox is required
 img = fitsread("hmi.M_720s.20190413_210000_TAI.3.magnetogram.fits", "image");
 maginfo = fitsinfo("hmi.M_720s.20190413_210000_TAI.3.magnetogram.fits");
@@ -84,7 +84,7 @@ hold off;
 % 5. sunspot group/individual spot identification using ellipses & also
 % cleanup bad spots
 
-cdelt1 = pixelScale;
+cdelt1 = pixelScale; cdelt2 = pixelScale;
 minsize_arcsec = 2; % ellipse must be at least this many arcseconds big to be counted
 groupseperation_arcsec = 80; % regions closer than this are linked into one group (emperical)
 groupseparation_px = groupseperation_arcsec / cdelt1; % max ellipse separation in pixels
@@ -93,14 +93,14 @@ mingrouparea = 150; % minimum group flux area (arcsec^2) (emperical and might ch
 % the higher this is, more noise and limb darkening effects might be kept
 spotfrac = 0.95; % obviously limb darkening isnt an issue when the other code is applied
 
-pixarea = cdelt1 * cdelt2; % arcsec^2 per pixel
+pixarea = cdelt1 * cdelt1  % arcsec^2 per pixel
 
 % span of an ellipse (semi-axes a,b, angle an) along x and y, in arcsec
 span = @(a,b,an) [2*sqrt((a*cos(an))^2 + (b*sin(an))^2)*abs(cdelt1), ...
     2*sqrt((a*sin(an))^2 + (b*cos(an))^2)*abs(cdelt2)];
 Iqs = median(continuumimg(isfinite(continuumimg) & continuumimg > 0)); % median brightness of whole image
-spotmask = isfinite(continuumimg) & continuumimg > 0 & continuumimg < spotfrac*Iqs;
-keep = find(cellfun(@(p) any(spotmask(p)), cc.PixelIdxList)); % keep flux regions that contain a sunspot (removes anomalies)
+spotmask = isfinite(medianimg) & medianimg > 0 & medianimg < spotfrac * Iqs;
+keep = find(cellfun(@(p) any(spotmask(p)), cc.PixelIdxList));
 
 % drop ellipses with size less than minimum from the max of major/minor axis or orientation
 bigenough = arrayfun(@(s) max(span(s.MajorAxisLength/2, s.MinorAxisLength/2, ...
@@ -144,7 +144,7 @@ for i = 1:numel(ids)
         'ang',atan2(V(2,o(1)), V(1,o(1))), 'members',m, 'area',grouparea); 
 end
 % red ellipses (individual) + blue ellipses surrounding it (group)
-figure(5); clf; imagesc(continuumimg); colormap("bone"); colorbar;
+figure(5); imagesc(continuumimg); colormap("bone"); colorbar;
 axis image; hold on
 for i = 1:numel(GE)
     for k = GE(i).members
@@ -156,7 +156,7 @@ for i = 1:numel(GE)
     plot(p(1,:), p(2,:), 'b', 'LineWidth', 2);
 end
 hold off
-figure(4); imagesc(medianimg); colormap("bone"); colorbar;
+
 
 
 % group number:
