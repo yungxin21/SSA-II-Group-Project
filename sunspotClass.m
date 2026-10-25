@@ -21,7 +21,7 @@ clear all
 % ellipse in polar 
 % r^2 = ((r^2)*(cos(theta))^2)/a^2 + ((r^2)*(sin(theta))^2)/b^2;
 
-[img,radius_sun] = limbDarkness("hmi.Ic_720s.20240504_040000_TAI.3.continuum.fits",1,0);
+[img,radius_sun] = limbDarkness("hmi.Ic_720s.20190413_040000_TAI.3.continuum.fits",0,0);
 % need to clip edges of the Sun to exclude background space (producing
 % intensity values of ~0)
 
@@ -58,7 +58,7 @@ clippedImg = sigmaClip(img,0,1); % full image.
 % need to change this hardcoding fir minimum area.
 % 2019-04-13: 50, 100.
 penumbraMask = ~bwareaopen(penumbraMask==0, 10);
-umbraMask = ~bwareaopen(umbraMask==0, 15);
+% umbraMask = ~bwareaopen(umbraMask==0, 15);
 % mergedMask = (penumbraMask | umbraMask);
 
 %%
