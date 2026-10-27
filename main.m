@@ -32,7 +32,7 @@ avgPxScale = (pixelScale1+pixelScale2)/2;
 magimg = fitsread(magTemp, "image");
 tfimg = tf2square(img, r_sun, u_center, v_center, 4096, 4096);
 % figure(6); imagesc(tfimg); colormap; colorbar; set(gca, 'YDir', 'normal');
-[individuals, GE, ~,~,~] = sunspotClass(tfimg, r_sun, u_center, v_center, avgPxScale); % intensitygram
+[individuals, GE] = sunspotClass(tfimg, r_sun, u_center, v_center, avgPxScale); % intensitygram
 
 magimg = tf2square(magimg, r_sun, u_center, v_center, 4096, 4096);
 

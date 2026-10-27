@@ -1,4 +1,4 @@
-function [S, GE] = haleslaw(continuumimg, img, radius, center_x, center_y, cdelt)
+function [S, GE] = haleslaw(img, radius, center_x, center_y, cdelt)
 
 % continuumimg = fitsread(intinput, "image"); 
 
@@ -114,15 +114,16 @@ ellipsepoints = @(c,a,b,an,theta) [c(1) + a*cos(theta)*cos(an) - b*sin(theta)*si
     c(2) + a*cos(theta)*sin(an) + b*sin(theta)*cos(an)]; % use anonymous function to save space
 
 % the higher this is, more noise and limb darkening effects might be kept
-spotfrac = 0.99; % obviously limb darkening isnt an issue when the other code is applied
+% spotfrac = 0.99; % obviously limb darkening isnt an issue when the other code is applied
 
 pixarea = cdelt * cdelt;  % arcsec^2 per pixel
 
 % span of an ellipse (semi-axes a,b, angle an) along x and y, in arcsec
 span = @(a,b,an) [2*sqrt((a*cos(an))^2 + (b*sin(an))^2)*abs(cdelt), ...
     2*sqrt((a*sin(an))^2 + (b*cos(an))^2)*abs(cdelt)];
-Iqs = median(continuumimg(isfinite(continuumimg) & continuumimg > 0)); % median brightness of whole image
-spotmask = isfinite(medianimg) & medianimg > 0 & medianimg < spotfrac * Iqs;
+% Iqs = median(continuumimg(isfinite(continuumimg) & continuumimg > 0)); % median brightness of whole image
+% additional logic below: & medianimg < Iqs.
+spotmask = isfinite(medianimg) & medianimg > 0;
 keep = find(cellfun(@(p) any(spotmask(p)), cc.PixelIdxList));
 
 % drop ellipses with size less than minimum from the max of major/minor axis or orientation

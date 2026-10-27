@@ -9,7 +9,7 @@
 % H: 1 sunspot that is >2.5 Ls (1 to >15Ls)
 % J: 1 sunspot that is <2.5 Ls
 
-function [individuals, GE, clippedImg, penumbraMask, umbraMask] = sunspotClass(img, radius_sun, center_x, center_y, pixelScale)
+function [individuals, GE] = sunspotClass(img, radius_sun, center_x, center_y, pixelScale)
 % [img,radius_sun] = limbDarkness("hmi.Ic_720s.20190413_210000_TAI.3.continuum.fits",0,0);
 % % need to clip edges of the Sun to exclude background space (producing
 % % intensity values of ~0)
